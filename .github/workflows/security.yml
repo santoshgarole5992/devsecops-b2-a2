@@ -1,0 +1,113 @@
+name: Security Checks
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  schedule:
+    - cron: '0 2 * * 1' # Every Monday at 2am UTC
+
+jobs:
+  sast:
+    name: Static Application Security Testing (CodeQL)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          output: codeql-report.sarif
+      - name: Upload CodeQL report
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-report
+          path: codeql-report.sarif
+          retention-days: 7
+
+  dependency-scan:
+    name: Dependency Scanning (npm audit)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+      - name: Run npm audit and save report
+        run: npm audit --audit-level=high --json > npm-audit-report.json || true
+      - name: Upload npm audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-report
+          path: npm-audit-report.json
+          retention-days: 7
+
+  secret-scan:
+    name: Secret Scanning (trufflehog)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan for secrets
+        run: trufflehog filesystem --json . > trufflehog-report.json || true
+      - name: Upload trufflehog report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trufflehog-report
+          path: trufflehog-report.json
+          retention-days: 7
+
+  lint:
+    name: Linting with Security Rules
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install ESLint
+        run: npm install eslint eslint-plugin-security --save-dev
+      - name: Run ESLint with security plugin and save report
+        run: npx eslint . --ext .js --plugin security -f json -o eslint-report.json || true
+      - name: Upload ESLint report
+        uses: actions/upload-artifact@v4
+        with:
+          name: eslint-report
+          path: eslint-report.json
+          retention-days: 7
+
+  container-scan:
+    name: Container Scanning (Dockerfile)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build Docker image
+        run: docker build -t test-image .
+      - name: Scan Docker image for vulnerabilities and save report
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: test-image
+          format: json
+          output: trivy-report.json
+        continue-on-error: true
+      - name: Upload Trivy report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: trivy-report.json
+          retention-days: 7 
