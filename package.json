@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "node ./bin/www",
+    "generate-ghas-report": "node scripts/generate-ghas-report.js"
   },
   "dependencies": {
     "body-parser": "~1.13.2",
