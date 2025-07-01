@@ -110,4 +110,27 @@ jobs:
         with:
           name: trivy-report
           path: trivy-report.json
-          retention-days: 7 
+          retention-days: 7
+
+  sonarqube:
+    name: SonarQube Analysis
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+      - name: SonarQube Scan
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          npm install -g sonarqube-scanner
+          sonarqube-scanner \
+            -Dsonar.projectKey=your_project_key \
+            -Dsonar.sources=. \
+            -Dsonar.host.url=http://<YOUR_SONARQUBE_HOST>:9000 \
+            -Dsonar.login=$SONAR_TOKEN 
