@@ -4,7 +4,7 @@ LABEL maintainer="Daniel García (cr0hn) cr0hn@cr0hn.com"
 
 ENV STAGE "DOCKER"
 
-RUN apt-get update && apt-get install -y netcat
+RUN apt-get update && apt-get install -y netcat && apt-get clean
 
 # Build app folders
 RUN mkdir /app
