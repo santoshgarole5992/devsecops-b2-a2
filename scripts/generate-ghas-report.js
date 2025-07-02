@@ -19,9 +19,9 @@ function parseSarif(filePath) {
       (run.results || []).forEach(result => {
         findings.push({
           rule: result.ruleId,
-          message: result.message && result.message.text,
-          file: result.locations && result.locations[0]?.physicalLocation?.artifactLocation?.uri,
-          line: result.locations && result.locations[0]?.physicalLocation?.region?.startLine,
+          message: result.message?.text,
+          file: result.locations?.[0]?.physicalLocation?.artifactLocation?.uri,
+          line: result.locations?.[0]?.physicalLocation?.region?.startLine,
           severity: result.level
         });
       });
