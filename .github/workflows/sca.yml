@@ -1,0 +1,73 @@
+name: SCA with Snyk + SBOM for Node.js
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 2 * * *'
+
+jobs:
+  snyk-sca-sbom:
+    name: Snyk + SBOM Scan (Node.js)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Snyk CLI and snyk-to-html
+        run: npm install -g snyk snyk-to-html
+
+      - name: Install Syft & Grype
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+          syft version && grype version
+
+      - name: Authenticate with Snyk
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk auth $SNYK_TOKEN
+
+      - name: Run Snyk Test and Generate Reports
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          mkdir -p snyk-reports
+          snyk test --all-projects --json-file-output=snyk-reports/snyk-report.json || true
+          snyk test --all-projects --json | snyk-to-html -o snyk-reports/snyk-report.html || true
+
+      - name: Monitor Project in Snyk
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk monitor --all-projects || true
+
+      - name: Generate SBOM with Syft (CycloneDX JSON)
+        run: syft dir:. -o cyclonedx-json > sbom.json
+
+      - name: Scan SBOM with Grype
+        run: grype sbom.json || true
+
+      - name: Upload Snyk Reports as Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-reports
+          path: snyk-reports/
+
+      - name: Upload SBOM as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.json
