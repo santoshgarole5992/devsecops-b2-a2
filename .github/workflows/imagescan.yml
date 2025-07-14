@@ -3,9 +3,9 @@ name: Node.js Docker Image Security Scan with Snyk
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
-    branches: [main]
+    branches: [master]
 
 jobs:
   container-security-scan:
