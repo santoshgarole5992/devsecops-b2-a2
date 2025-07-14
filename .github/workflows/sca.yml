@@ -3,9 +3,9 @@ name: SCA with Snyk + SBOM for Node.js
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
-    branches: [main]
+    branches: [master]
   schedule:
     - cron: '0 2 * * *'
 
