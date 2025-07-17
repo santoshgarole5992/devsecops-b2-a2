@@ -52,6 +52,48 @@ The workflow (`imagescan.yml`) automates the following steps:
 
 ---
 
+## Remediation Steps & Observations
+
+### Actions Taken
+- **Upgraded Base Image:** Switched to the latest stable `node:slim` image to reduce inherited vulnerabilities.
+- **Multi-stage Builds:** Applied multi-stage builds in the Dockerfile to minimize the final image size and remove build-time dependencies.
+- **Removed Unnecessary Packages:** Cleaned up the Dockerfile to avoid installing tools/utilities not needed at runtime.
+- **Updated Application Dependencies:** Ensured all Node.js dependencies are up to date and free from known vulnerabilities.
+- **Automated Scanning:** Integrated Snyk container scanning in `imagescan.yml` to catch vulnerabilities on every build.
+
+### Impact Analysis
+- **Security:**
+  - The number of vulnerabilities in the image was significantly reduced after upgrading the base image and cleaning up the Dockerfile.
+  - Automated scanning ensures new vulnerabilities are caught early in the CI/CD process.
+- **Performance:**
+  - The image size was reduced, leading to faster deployments and lower attack surface.
+- **Compliance:**
+  - Improved compliance with security best practices and organizational requirements.
+- **Developer Experience:**
+  - Developers receive faster feedback on image security, enabling quicker remediation.
+
+### Blockers Encountered
+- **Base Image Limitations:**
+  - Some vulnerabilities could not be remediated because no fixed version exists in the upstream base image.
+- **Dependency Compatibility:**
+  - Upgrading certain dependencies required code changes or additional testing to ensure compatibility.
+- **Tool Output Issues:**
+  - Docker Scout's JSON output was empty in some cases, making automated reporting difficult.
+
+### Recommendations
+- **Monitor Base Image Updates:**
+  - Regularly check for new releases of the base image and update promptly.
+- **Automate Scanning:**
+  - Keep Snyk and other scanning tools integrated in CI/CD to catch issues early.
+- **Review Dockerfile Regularly:**
+  - Remove unnecessary layers, packages, and files to minimize vulnerabilities.
+- **Cross-validate with Multiple Tools:**
+  - Use both Snyk and Docker Scout (or similar) to get comprehensive coverage.
+- **Document and Track Unresolved Issues:**
+  - For vulnerabilities that cannot be fixed, document the risk and track for future remediation.
+
+---
+
 ## Recommendations & Mitigation Steps
 - **Use minimal and up-to-date base images** (e.g., node:slim, node:alpine)
 - **Regularly scan images** as part of CI/CD
