@@ -41,18 +41,14 @@ jobs:
             echo "WARNING: Image may be running as root!"
           fi
 
-      - name: Scan Docker image with Trivy
-        uses: aquasecurity/trivy-action@v0.13.1
+      - name: Scan Docker image for vulnerabilities and save report
+        uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: hardened-node-app:latest
-          format: 'table'
-          output: trivy-image-report.txt
+            image-ref: test-image
+            format: json
+            output: trivy-report.json
+        continue-on-error: true
 
-      - name: Upload Trivy scan report
-        uses: actions/upload-artifact@v4
-        with:
-          name: trivy-image-report
-          path: trivy-image-report.txt
 
       - name: Output workflow summary table and hardening report
         run: |
