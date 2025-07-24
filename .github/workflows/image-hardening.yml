@@ -3,10 +3,10 @@ name: Build Hardened Docker Image and Verify Python App
 on:
   push:
     branches:
-      - main
+      - master
   pull_request:
     branches:
-      - main
+      - master
 
 jobs:
   build-hardened-image:
