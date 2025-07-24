@@ -1,4 +1,4 @@
-name: Build Hardened Docker Image and Verify Python App
+name: Build Hardened Docker Image and Verify NodeJS App
 
 on:
   push:
@@ -40,7 +40,6 @@ jobs:
           else
             echo "WARNING: Image may be running as root!"
           fi
-
 
       - name: Output workflow summary table and hardening report
         run: |
