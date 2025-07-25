@@ -1,4 +1,4 @@
-name: Build Hardened Docker Image and Verify NodeJS App
+name: Build Hardened Docker Image and Verify Node App
 
 on:
   push:
@@ -11,7 +11,6 @@ on:
 jobs:
   build-hardened-image:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -25,8 +24,8 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build Hardened Docker Image
-        run: docker build -t hardened-node-app:latest .
+      - name: Build Hardened Docker Image (with latest base)
+        run: docker build --pull -t hardened-node-app:latest .
 
       - name: Run container to verify non-root
         run: docker run --rm hardened-node-app:latest id
@@ -41,34 +40,68 @@ jobs:
             echo "WARNING: Image may be running as root!"
           fi
 
+      - name: Test container with network disabled
+        run: |
+          docker run --rm --network=none hardened-node-app:latest id
+          echo "Container started with --network=none (network access disabled)."
+
+      - name: Test container with all Linux capabilities dropped
+        run: |
+          docker run --rm --cap-drop=ALL hardened-node-app:latest id
+          echo "Container started with --cap-drop=ALL (all Linux capabilities dropped)."
+
+      - name: Scan Docker image for vulnerabilities and save report
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: hardened-node-app:latest
+          format: json
+          output: trivy-report.json
+        continue-on-error: true
+
+      - name: Upload Trivy report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: trivy-report.json
+          retention-days: 7
+
       - name: Output workflow summary table and hardening report
         run: |
           echo "## Image Hardening Output Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Command                                  | What to Check For                          | Example Output / Result                 |" >> $GITHUB_STEP_SUMMARY
-          echo "|------------------------------------------|--------------------------------------------|-----------------------------------------|" >> $GITHUB_STEP_SUMMARY
-          echo "| docker build -t hardened-node-app .      | Minimal image, no secrets, no extra packages | Build completes, clean logs              |" >> $GITHUB_STEP_SUMMARY
-          echo "| docker run --rm hardened-node-app id     | Non-root user (uid ≠ 0)                     | uid=1000(appuser) gid=1000(appuser)     |" >> $GITHUB_STEP_SUMMARY
-          echo "| docker image inspect hardened-node-app   | User is non-root, small size, no secrets   | JSON output shows \"User\": \"appuser\"  |" >> $GITHUB_STEP_SUMMARY
-          echo "| docker run --rm -p 3000:3000 ...         | App runs, no errors, no sensitive logs      | App starts, listens on 3000              |" >> $GITHUB_STEP_SUMMARY
+          echo "| Command                                         | What to Check For                          | Example Output / Result                 |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------------------------------------------------|--------------------------------------------|-----------------------------------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| docker build --pull -t hardened-node-app .      | Minimal image, up-to-date base, no secrets | Build completes, clean logs              |" >> $GITHUB_STEP_SUMMARY
+          echo "| docker run --rm hardened-node-app id            | Non-root user (uid ≠ 0)                     | uid=1000(appuser) gid=1000(appuser)     |" >> $GITHUB_STEP_SUMMARY
+          echo "| docker image inspect hardened-node-app          | User is non-root, small size, no secrets   | JSON output shows \"User\": \"appuser\"  |" >> $GITHUB_STEP_SUMMARY
+          echo "| docker run --rm --network=none ...              | App starts with no network access           | id output, no errors                    |" >> $GITHUB_STEP_SUMMARY
+          echo "| docker run --rm --cap-drop=ALL ...              | App starts with all Linux capabilities dropped | id output, no errors                 |" >> $GITHUB_STEP_SUMMARY
+          echo "| docker run --rm -p 3000:3000 ...                | App runs, no errors, no sensitive logs      | App starts, listens on 3000              |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Hardening Steps Taken" >> $GITHUB_STEP_SUMMARY
           echo "- Used minimal base image (node:19.4.0-bullseye-slim)" >> $GITHUB_STEP_SUMMARY
+          echo "- Always pull latest base image for security updates" >> $GITHUB_STEP_SUMMARY
           echo "- Created and used non-root user (appuser)" >> $GITHUB_STEP_SUMMARY
           echo "- Removed unnecessary packages and cleaned up cache" >> $GITHUB_STEP_SUMMARY
           echo "- Used .dockerignore to exclude unnecessary files" >> $GITHUB_STEP_SUMMARY
           echo "- No secrets or credentials in image" >> $GITHUB_STEP_SUMMARY
           echo "- Scanned image for vulnerabilities (Trivy)" >> $GITHUB_STEP_SUMMARY
+          echo "- Tested container with network disabled (--network=none)" >> $GITHUB_STEP_SUMMARY
+          echo "- Tested container with all Linux capabilities dropped (--cap-drop=ALL)" >> $GITHUB_STEP_SUMMARY
+          echo "- Image lifecycle management: always rebuild with latest base, recommend registry cleanup policies" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Security Impact" >> $GITHUB_STEP_SUMMARY
           echo "- Reduced attack surface and vulnerability count" >> $GITHUB_STEP_SUMMARY
           echo "- Improved compliance and faster deployments" >> $GITHUB_STEP_SUMMARY
+          echo "- Limited network and Linux capabilities for defense-in-depth" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Limitations & Challenges" >> $GITHUB_STEP_SUMMARY
           echo "- Some vulnerabilities may remain in upstream base image" >> $GITHUB_STEP_SUMMARY
           echo "- Minimal images lack debugging tools" >> $GITHUB_STEP_SUMMARY
           echo "- Multi-stage/distroless builds can be complex" >> $GITHUB_STEP_SUMMARY
           echo "- Alpine (musl libc) may cause compatibility issues for some Node.js modules" >> $GITHUB_STEP_SUMMARY
+          echo "- Not all apps can run with --network=none or --cap-drop=ALL; test your app's requirements" >> $GITHUB_STEP_SUMMARY
+          echo "- Image lifecycle management (deleting old images) may require external registry automation" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Comparative Analysis: Alpine vs Ubuntu (slim)" >> $GITHUB_STEP_SUMMARY
           echo "| Feature         | Alpine      | Ubuntu (slim) |" >> $GITHUB_STEP_SUMMARY
