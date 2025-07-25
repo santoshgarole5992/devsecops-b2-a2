@@ -65,7 +65,7 @@ jobs:
           path: trivy-report.json
           retention-days: 7
 
-      - name: Output workflow summary table and hardening report
+      - name: Output workflow summary table and hardening report 
         run: |
           echo "## Image Hardening Output Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
