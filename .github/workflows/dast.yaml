@@ -55,8 +55,7 @@ jobs:
           target: 'http://localhost:3000'
           rules_file_name: ''
           cmd_options: '-t 120'
-          allow_fail: true
-          report_file: 'zap-report.html'
+          artifact_name: 'zap-report'
 
       - name: Upload ZAP report
         uses: actions/upload-artifact@v4
