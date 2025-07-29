@@ -4,7 +4,6 @@ var engine = require('ejs-locals');
 var path = require('path');
 var favicon = require('serve-favicon');
 var fs = require("fs");
-var fake secret  = "xxxxxxllldhkbadobdqo8es"
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
