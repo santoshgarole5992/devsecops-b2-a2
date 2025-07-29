@@ -35,9 +35,19 @@ jobs:
       - name: Check running containers
         run: docker ps -a
   
-      - name: Test app endpoint
+      - name: Wait for app to be ready
         run: |
-            curl -v http://localhost:3000 || true
+          for i in {1..10}; do
+            if curl -s http://localhost:3000 > /dev/null; then
+              echo "App is up!"
+              exit 0
+            fi
+            echo "Waiting for app..."
+            sleep 3
+          done
+          echo "App did not start in time"
+          docker logs dast-app
+          exit 1
 
       - name: Run OWASP ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.12.0
