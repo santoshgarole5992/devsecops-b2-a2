@@ -16,12 +16,18 @@ var products = require('./routes/products');
 var app = express();
 
 // config second logger
-log4js.loadAppender('file');
-//log4js.addAppender(log4js.appenders.console());
-log4js.addAppender(log4js.appenders.file('app-custom.log'), 'vnode');
+log4js.configure({
+  appenders: {
+    vnode: { type: 'file', filename: 'app-custom.log' }
+  },
+  categories: {
+    default: { appenders: ['vnode'], level: 'info' },
+    vnode: { appenders: ['vnode'], level: 'info' }
+  }
+});
 
 var logger4js = log4js.getLogger('vnode');
-logger4js.setLevel('INFO');
+logger4js.level = 'info';
 
 var accessLogStream = fs.createWriteStream(path.join(__dirname, 'access.log'))
 
