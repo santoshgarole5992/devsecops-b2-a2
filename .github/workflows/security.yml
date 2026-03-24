@@ -99,7 +99,7 @@ jobs:
       - name: Build Docker image
         run: docker build -t test-image .
       - name: Scan Docker image for vulnerabilities and save report
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: test-image
           format: json
@@ -120,7 +120,7 @@ jobs:
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v5
+        uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       - name: Archive SonarQube scanner work directory
